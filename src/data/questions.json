@@ -518,7 +518,7 @@
     "module": "MÓDULO 1 - Placas, Cores e Caminhos",
     "difficulty": "Difícil",
     "question": "Felipe segue pela faixa da direita e encontra a placa acima, seguida de “Fim da proibição de mudar de faixa”. O que isso significa?",
-    "correct_answer": "",
+    "correct_answer": "Que ele pode mudar de faixa a partir da segunda placa.",
     "comment": "",
     "wrong_answers": [
       "Que a proibição vale até o fim da via.",
@@ -822,7 +822,7 @@
     "module": "MÓDULO 1 - Placas, Cores e Caminhos",
     "difficulty": "Fácil",
     "question": "A placa “Sentido Proibido” serve para:",
-    "correct_answer": "",
+    "correct_answer": "A entrada de veículos naquela via ou faixa é proibida, pois o tráfego flui no sentido contrário.",
     "comment": "",
     "wrong_answers": [
       "Avisar sobre obras na pista.",
@@ -3046,7 +3046,7 @@
     "module": "MÓDULO 1 - Placas, Cores e Caminhos",
     "difficulty": "Intermediário",
     "question": "Marcos conduz um caminhão e encontra a placa acima acompanhada da inscrição “Das 7h às 20h”. O que isso significa?",
-    "correct_answer": "",
+    "correct_answer": "A proibição vale apenas dentro do horário indicado.",
     "comment": "",
     "wrong_answers": [
       "É proibido trafegar 24 horas.",
