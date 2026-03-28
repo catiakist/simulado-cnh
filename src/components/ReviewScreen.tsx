@@ -1,6 +1,7 @@
 import type { QuizResult } from '../types';
 import DifficultyBadge from './DifficultyBadge';
 import { useState } from 'react';
+import SignBadge from './SignBadge';
 
 interface Props {
   results: QuizResult[];
@@ -36,11 +37,7 @@ export default function ReviewScreen({ results, onBack }: Props) {
 
           {/* Question */}
           <div className="bg-slate-800/60 border border-slate-700 rounded-2xl p-6">
-            {q.plate_code && (
-                <div className="mb-3 inline-flex items-center gap-1.5 bg-slate-700/50 border border-slate-600 rounded-lg px-3 py-1 text-slate-400 text-xs">
-                  🪧 Código da placa: <span className="text-slate-300 font-semibold">{q.plate_code}</span>
-                </div>
-              )}
+            {q.plate_code && <SignBadge code={q.plate_code} />}
             <p className="text-white text-lg leading-relaxed font-medium">{q.question}</p>
           </div>
 

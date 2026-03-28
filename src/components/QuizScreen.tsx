@@ -1,6 +1,7 @@
 import type { ShuffledQuestion } from '../types';
 import DifficultyBadge from './DifficultyBadge';
 import ProgressBar from './ProgressBar';
+import SignBadge from './SignBadge';
 
 interface Props {
   question: ShuffledQuestion;
@@ -82,9 +83,7 @@ export default function QuizScreen({
         {/* Question Card */}
         <div className="bg-slate-800/60 border border-slate-700 rounded-2xl p-6">
           {question.plate_code && (
-            <div className="mb-3 inline-flex items-center gap-1.5 bg-slate-700/50 border border-slate-600 rounded-lg px-3 py-1 text-slate-400 text-xs">
-              🪧 Código da placa: <span className="text-slate-300 font-semibold">{question.plate_code}</span>
-            </div>
+            <SignBadge code={question.plate_code} />
           )}
           <p className="text-white text-lg leading-relaxed font-medium">
             {question.question}
