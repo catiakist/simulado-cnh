@@ -73,8 +73,16 @@ export default function QuizScreen({
         {/* Question Card */}
         <div className="bg-slate-800/60 border border-slate-700 rounded-2xl p-6">
           {question.plate_code && (
-            <div className="mb-3 inline-flex items-center gap-1.5 bg-cyan-500/10 border border-cyan-700/40 rounded-lg px-3 py-1 text-cyan-300 text-xs font-semibold">
-              🪧 Código da placa: <span className="font-bold">{question.plate_code}</span>
+            <div className="mb-4">
+              <img
+                src={`/signs/q${question.number}.png`}
+                alt={`Placa ${question.plate_code}`}
+                className="max-h-40 mx-auto rounded-lg object-contain bg-white p-1"
+                onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
+              />
+              <p className="text-center text-cyan-400 text-xs font-semibold mt-1">
+                Código: {question.plate_code}
+              </p>
             </div>
           )}
           <p className="text-white text-lg leading-relaxed font-medium">
