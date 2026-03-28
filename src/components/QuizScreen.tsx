@@ -12,6 +12,7 @@ interface Props {
   onAnswer: (idx: number) => void;
   onNext: () => void;
   onFinish: () => void;
+  onExit: () => void;
 }
 
 const LETTERS = ['A', 'B', 'C', 'D'];
@@ -30,6 +31,7 @@ export default function QuizScreen({
   onAnswer,
   onNext,
   onFinish,
+  onExit,
 }: Props) {
   const isAnswered = chosenIndex !== null;
 
@@ -61,8 +63,15 @@ export default function QuizScreen({
 
         {/* Header */}
         <div className="flex items-center justify-between">
+          <button
+            onClick={onExit}
+            className="flex items-center gap-1.5 text-slate-400 hover:text-white text-sm transition-colors"
+          >
+            ← Sair
+          </button>
           <span className="text-slate-400 text-sm font-medium">
-            Questão <span className="text-white font-semibold">{currentIndex + 1}</span> de{' '}
+            <span className="text-white font-semibold">{currentIndex + 1}</span>
+            {' '}/{' '}
             <span className="text-white font-semibold">{total}</span>
           </span>
           <div className="flex items-center gap-2">

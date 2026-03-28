@@ -15,9 +15,11 @@ const allQuestions = allQuestionsRaw as Question[];
 function QuizWrapper({
   config,
   onFinish,
+  onExit,
 }: {
   config: QuizConfig;
   onFinish: (results: QuizResult[], config: QuizConfig) => void;
+  onExit: () => void;
 }) {
   const quiz = useQuiz(allQuestions, config);
 
@@ -39,6 +41,7 @@ function QuizWrapper({
       onAnswer={quiz.answer}
       onNext={quiz.next}
       onFinish={() => onFinish(quiz.results, config)}
+      onExit={onExit}
     />
   );
 }
@@ -76,6 +79,7 @@ export default function App() {
         key={quizKey}
         config={quizConfig}
         onFinish={handleFinish}
+        onExit={() => setScreen('home')}
       />
     );
   }
