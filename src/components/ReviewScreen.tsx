@@ -1,7 +1,6 @@
 import type { QuizResult } from '../types';
 import DifficultyBadge from './DifficultyBadge';
 import { useState } from 'react';
-import { getSignInfo } from '../data/signCodes';
 
 interface Props {
   results: QuizResult[];
@@ -37,27 +36,11 @@ export default function ReviewScreen({ results, onBack }: Props) {
 
           {/* Question */}
           <div className="bg-slate-800/60 border border-slate-700 rounded-2xl p-6">
-            {q.plate_code && (() => {
-                const info = getSignInfo(q.plate_code);
-                return (
-                  <div className="mb-4 bg-slate-900/70 border border-cyan-700/40 rounded-xl px-4 py-3 flex items-start gap-3">
-                    <span className="text-2xl shrink-0">🪧</span>
-                    <div>
-                      <p className="text-cyan-300 text-xs font-bold uppercase tracking-wide mb-0.5">
-                        Placa referenciada na questão
-                      </p>
-                      <p className="text-white font-semibold text-sm">
-                        {info ? info.name : q.plate_code}
-                      </p>
-                      {info && (
-                        <p className="text-slate-400 text-xs mt-0.5">
-                          {info.category} · Código: {q.plate_code}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                );
-              })()}
+            {q.plate_code && (
+                <div className="mb-3 inline-flex items-center gap-1.5 bg-slate-700/50 border border-slate-600 rounded-lg px-3 py-1 text-slate-400 text-xs">
+                  🪧 Código da placa: <span className="text-slate-300 font-semibold">{q.plate_code}</span>
+                </div>
+              )}
             <p className="text-white text-lg leading-relaxed font-medium">{q.question}</p>
           </div>
 
