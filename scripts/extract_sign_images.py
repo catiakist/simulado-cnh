@@ -1,109 +1,92 @@
 """
-Extrai imagens das placas do PDF, associando cada imagem à questão correspondente.
-As placas aparecem como gráficos vetoriais ACIMA do texto da questão em cada página.
+Extrai imagens das placas de trânsito do PDF de Sinalização Vertical.
+Funciona para placas do tipo A- (Advertência) presentes no PDF.
 """
-import sys, os, json, re
-
+import sys, os, re, json
 sys.path.insert(0, 'C:/Users/Catia/AppData/Roaming/Python/Python314/site-packages')
-import fitz  # PyMuPDF
+import fitz
 
-PDF_PATH = 'C:/Users/Catia/Desktop/Banco Nacional de Questões.pdf'
-QUESTIONS_PATH = 'C:/Users/Catia/Desktop/simulado-cnh/src/data/questions.json'
-OUTPUT_DIR = 'C:/Users/Catia/Desktop/simulado-cnh/public/signs'
+PDF_PATH = r'C:/Users/Catia/Desktop/sinalização vertical de transito.pdf'
+OUT_DIR = 'C:/Users/Catia/Desktop/simulado-cnh/public/signs'
+os.makedirs(OUT_DIR, exist_ok=True)
 
-os.makedirs(OUTPUT_DIR, exist_ok=True)
+# Load codes needed by the quiz
+with open('C:/Users/Catia/Desktop/simulado-cnh/src/data/questions.json', encoding='utf-8') as f:
+    qs = json.load(f)
+needed = set(q['plate_code'] for q in qs if q.get('plate_code') and ' ' not in q.get('plate_code', ''))
 
-with open(QUESTIONS_PATH, encoding='utf-8') as f:
-    questions = json.load(f)
-
-# Questões que precisam de imagem (têm plate_code)
-plate_questions = {q['number']: q for q in questions if q.get('plate_code')}
-print(f"Questões com código de placa: {len(plate_questions)}")
+code_pat = re.compile(r'^([AR]-\d+[a-z]?|SAU-\d+|TAR-\d+|THC-\d+|TNA-\d+|DEF-\d+)$')
 
 doc = fitz.open(PDF_PATH)
-saved = 0
-not_found = []
 
-# Padrão para detectar início de questão no texto da página
-# Exemplo: "l (Fácil) 30." ou "G (Intermediário) 30."
-Q_PATTERN = re.compile(r'[lG●•]\s*\([^)]+\)\s*(\d+)\.')
+def extract_sign(page, code, code_y_center, code_x0, padding=8):
+    """
+    Finds the sign drawing on the page near the code's y position
+    and to the left of the code text, then renders it as PNG bytes.
+    """
+    drawings = page.get_drawings()
 
-for page_num in range(len(doc)):
-    page = doc[page_num]
-    page_text = page.get_text('text')
+    # Find drawings that are vertically close to the code text and to the left
+    candidates = []
+    for d in drawings:
+        r = d['rect']
+        cy = (r.y0 + r.y1) / 2
+        if abs(cy - code_y_center) < 40 and r.x1 < code_x0 + 20 and r.width > 10 and r.height > 10:
+            if d.get('fill') and d['fill'] != (1.0, 1.0, 1.0):  # not white
+                candidates.append(r)
 
-    # Encontrar quais questões estão nesta página
-    found_nums = [int(m.group(1)) for m in Q_PATTERN.finditer(page_text)]
-    questions_on_page = [n for n in found_nums if n in plate_questions]
+    if not candidates:
+        return None
 
-    if not questions_on_page:
+    # Get bounding box of all candidate drawings together
+    x0 = min(r.x0 for r in candidates)
+    y0 = min(r.y0 for r in candidates)
+    x1 = max(r.x1 for r in candidates)
+    y1 = max(r.y1 for r in candidates)
+
+    crop = fitz.Rect(x0 - padding, y0 - padding, x1 + padding, y1 + padding)
+
+    # Render at 3x resolution for quality
+    pix = page.get_pixmap(matrix=fitz.Matrix(3, 3), clip=crop, colorspace=fitz.csRGB, alpha=False)
+    return pix.tobytes('png')
+
+
+extracted = {}
+
+for page_idx in range(len(doc)):
+    page = doc[page_idx]
+
+    if len(page.get_drawings()) < 5:
         continue
 
-    # Obter blocos de texto com posições
-    blocks = page.get_text('blocks')  # (x0,y0,x1,y1,text,block_no,block_type)
+    words = page.get_text('words')
+    code_words = [(w[0], w[1], w[2], w[3], w[4]) for w in words if code_pat.match(w[4])]
 
-    for q_num in questions_on_page:
-        # Encontrar bloco de texto onde começa esta questão
-        q_block = None
-        for b in blocks:
-            if re.search(r'[lG●•]\s*\([^)]+\)\s*' + str(q_num) + r'\.', b[4]):
-                q_block = b
-                break
-
-        if q_block is None:
-            not_found.append(q_num)
+    for x0, y0, x1, y1, code in code_words:
+        if code not in needed:
+            continue
+        if code in extracted:
             continue
 
-        q_y = q_block[1]  # y0 do bloco da questão
+        code_y_center = (y0 + y1) / 2
+        png_data = extract_sign(page, code, code_y_center, x0)
 
-        # Encontrar o bloco anterior (acima) na mesma página
-        # Ordenar blocos por y0
-        sorted_blocks = sorted(blocks, key=lambda b: b[1])
-        prev_block = None
-        for b in sorted_blocks:
-            if b[1] < q_y - 5:  # bloco acima da questão
-                prev_block = b
+        if png_data and len(png_data) > 1000:
+            out_path = os.path.join(OUT_DIR, f'{code}.png')
+            if os.path.exists(out_path):
+                extracted[code] = 'already_exists'
+                continue
+            with open(out_path, 'wb') as f:
+                f.write(png_data)
+            extracted[code] = page_idx + 1
+            print(f'  OK {code} (page {page_idx + 1})')
 
-        if prev_block is None:
-            not_found.append(q_num)
-            continue
+doc.close()
 
-        prev_y_end = prev_block[3]  # y1 do bloco anterior
-
-        # Área da placa: entre o fim do bloco anterior e o início da questão
-        sign_y0 = prev_y_end + 2
-        sign_y1 = q_y - 2
-
-        # Se a área for muito pequena, pode ser que a placa seja mais acima
-        if sign_y1 - sign_y0 < 20:
-            # Tentar pegar área maior
-            sign_y0 = max(0, q_y - 120)
-            sign_y1 = q_y - 2
-
-        if sign_y1 - sign_y0 < 15:
-            not_found.append(q_num)
-            continue
-
-        # Clipar e renderizar a área da placa
-        page_width = page.rect.width
-        clip = fitz.Rect(0, sign_y0, page_width, sign_y1)
-
-        # Renderizar em alta resolução
-        mat = fitz.Matrix(4, 4)  # 4x zoom para qualidade
-        pix = page.get_pixmap(matrix=mat, clip=clip, colorspace=fitz.csRGB)
-
-        out_path = os.path.join(OUTPUT_DIR, f'q{q_num}.png')
-        pix.save(out_path)
-        saved += 1
-
-        if saved % 20 == 0:
-            print(f"  Salvas: {saved}...")
-
-print(f"\nTotal salvas: {saved}")
-print(f"Não encontradas: {len(not_found)} → {not_found[:20]}")
-
-# Criar mapa de plate_code → question_number para referência
-plate_map = {q['plate_code']: q['number'] for q in questions if q.get('plate_code')}
-with open(os.path.join(OUTPUT_DIR, 'plate_map.json'), 'w', encoding='utf-8') as f:
-    json.dump(plate_map, f, ensure_ascii=False, indent=2)
-print("plate_map.json salvo.")
+print(f'\nExtraídas: {len(extracted)}')
+missing = [c for c in sorted(needed) if c not in extracted
+           and not os.path.exists(os.path.join(OUT_DIR, f'{c}.png'))
+           and not os.path.exists(os.path.join(OUT_DIR, f'{c}.svg'))]
+print(f'Ainda faltando: {len(missing)}')
+if missing:
+    print('Faltando:', missing)

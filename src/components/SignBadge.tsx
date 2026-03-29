@@ -94,22 +94,28 @@ function SignShape({ code, type }: { code: string; type: ReturnType<typeof getSi
 export default function SignBadge({ code }: Props) {
   const type = getSignType(code);
   const label = getLabel(type);
-  const imgSrc = `/signs/${code}.png`;
+
+  function handleImgError(e: React.SyntheticEvent<HTMLImageElement>) {
+    const img = e.target as HTMLImageElement;
+    if (img.src.endsWith('.png')) {
+      // Try SVG file next
+      img.src = `/signs/${code}.svg`;
+    } else {
+      // Show rendered fallback shape
+      img.style.display = 'none';
+      const fallback = img.parentElement!.querySelector('.sign-fallback') as HTMLElement;
+      if (fallback) fallback.style.display = 'flex';
+    }
+  }
 
   return (
     <div className="flex flex-col items-center gap-2 mb-4">
       <div className="bg-white rounded-2xl p-3 shadow-lg flex items-center justify-center min-w-[120px] min-h-[120px]">
         <img
-          src={imgSrc}
+          src={`/signs/${code}.png`}
           alt={`Placa ${code}`}
           className="max-h-28 max-w-28 object-contain"
-          onError={e => {
-            // Fallback to SVG shape if no image
-            const parent = (e.target as HTMLImageElement).parentElement!;
-            (e.target as HTMLImageElement).style.display = 'none';
-            const fallback = parent.querySelector('.sign-fallback') as HTMLElement;
-            if (fallback) fallback.style.display = 'flex';
-          }}
+          onError={handleImgError}
         />
         <div className="sign-fallback" style={{ display: 'none' }}>
           <SignShape code={code} type={type} />
